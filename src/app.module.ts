@@ -5,10 +5,14 @@ import { User } from './users/user.entity';
 import { OtpModule } from './otp/otp.module';
 import { UserNotConfirmed } from './users/user-not-confirmed.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres', // Specify the type of database
       host: 'localhost', // Database host

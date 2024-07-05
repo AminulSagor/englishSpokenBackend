@@ -1,21 +1,24 @@
-// src/users/users.controller.ts
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 
-
 export class CreateUserDto {
-    username: string;
-    email: string;
-    password: string;
-    otp: string;
-  }
+  username: string;
+  email: string;
+  password: string;
+  otp: string;
+}
 
-  export class VerifyOtpDto {
-    email: string;
-    otp: string;
-  }
-  
+export class VerifyOtpDto {
+  email: string;
+  otp: string;
+}
+
+export class LoginDto {
+  email: string;
+  password: string;
+}
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -34,5 +37,11 @@ export class UsersController {
   async verifyOtpAndCreateUser(@Body() verifyOtpDto: VerifyOtpDto): Promise<User> {
     const { email, otp } = verifyOtpDto;
     return await this.usersService.verifyOtpAndCreateUser(email, otp);
+  }
+
+  @Post('login')
+  async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
+    const { email, password } = loginDto;
+    return this.usersService.login(email, password);
   }
 }

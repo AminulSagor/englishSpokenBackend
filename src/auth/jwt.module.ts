@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
-import { User } from './user.entity';
-import { UserNotConfirmed } from './user-not-confirmed.entity';
-import { OtpService } from 'src/otp/otp.service';
+import { UserNotConfirmed } from 'src/users/user-not-confirmed.entity';
+import { User } from 'src/users/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtStrategy } from 'src/auth/jwt.strategy';
+import { UsersService } from 'src/users/users.service';
+import { OtpService } from 'src/otp/otp.service';
+import { JwtStrategy } from './jwt.strategy';
+import { UsersController } from 'src/users/users.controller';
 
 @Module({
   imports: [

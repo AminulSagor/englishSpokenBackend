@@ -1,7 +1,6 @@
 // src/users/user.entity.ts
 
-import { Entity, PrimaryGeneratedColumn, Column ,BeforeInsert} from 'typeorm';
-import * as bcrypt from 'bcryptjs';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
 export class User {
@@ -17,8 +16,5 @@ export class User {
   @Column()
   password: string;
 
-  @BeforeInsert()
-  async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10); // Ensure 'this.password' is defined and a string
-  }
+
 }
