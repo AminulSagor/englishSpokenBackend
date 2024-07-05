@@ -9,10 +9,11 @@ import { UserNotConfirmed } from './user-not-confirmed.entity';
 import { OtpService } from 'src/otp/otp.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
+import { TokenBlacklist } from 'src/auth/TokenBlacklist.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserNotConfirmed]),
+    TypeOrmModule.forFeature([User, UserNotConfirmed,TokenBlacklist]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -25,5 +26,6 @@ import { JwtStrategy } from 'src/auth/jwt.strategy';
   ],
   providers: [UsersService, OtpService, JwtStrategy],
   controllers: [UsersController],
+  exports: [UsersService],
 })
 export class UsersModule {}

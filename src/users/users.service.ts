@@ -6,7 +6,8 @@ import { UserNotConfirmed } from './user-not-confirmed.entity';
 import * as bcrypt from 'bcryptjs';
 import { OtpService } from 'src/otp/otp.service';
 import { CreateUserDto } from './users.controller';
-import { JwtService } from '@nestjs/jwt'; // Make sure to import JwtService
+import { JwtService } from '@nestjs/jwt';
+import { TokenBlacklist } from 'src/auth/TokenBlacklist.entity';
 
 @Injectable()
 export class UsersService {
@@ -15,8 +16,10 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(UserNotConfirmed)
     private usersNotConfirmedRepository: Repository<UserNotConfirmed>,
+    @InjectRepository(TokenBlacklist)
+    private tokenBlacklistRepository: Repository<TokenBlacklist>,
     private readonly otpService: OtpService,
-    private readonly jwtService: JwtService, // Inject JwtService
+    private readonly jwtService: JwtService,
   ) {}
 
   async initiateSignUp(createUserDto: CreateUserDto): Promise<void> {
@@ -36,29 +39,20 @@ export class UsersService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    // Retrieve user data from UserNotConfirmed table
     const userData = await this.usersNotConfirmedRepository.findOne({ where: { email, otp } });
     if (!userData) {
       throw new BadRequestException('User data not found');
     }
 
-    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-    // Create a new user entity with hashed password
     const newUser = this.usersRepository.create({ username: userData.username, email, password: hashedPassword });
 
     try {
-      // Attempt to save the new user to the database
       const savedUser = await this.usersRepository.save(newUser);
-
-      // Delete from UserNotConfirmed table after successful signup
       await this.usersNotConfirmedRepository.delete(userData.id);
-
       return savedUser;
     } catch (error) {
-      // Handle any database-specific errors
-      if (error.code === '23505') { // Unique constraint violation error code
+      if (error.code === '23505') {
         throw new ConflictException('Username or email already exists');
       } else {
         throw new Error('Failed to create user');
@@ -72,6 +66,16 @@ export class UsersService {
 
   async validatePassword(user: User, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
+  }
+
+  async blacklistToken(token: string): Promise<void> {
+    const blacklistedToken = this.tokenBlacklistRepository.create({ token });
+    await this.tokenBlacklistRepository.save(blacklistedToken);
+  }
+
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    const tokenEntry = await this.tokenBlacklistRepository.findOne({ where: { token } });
+    return !!tokenEntry;
   }
 
   async login(email: string, password: string): Promise<{ accessToken: string }> {
@@ -89,5 +93,9 @@ export class UsersService {
     const accessToken = this.jwtService.sign(payload);
 
     return { accessToken };
+  }
+
+  async logout(token: string): Promise<void> {
+    await this.blacklistToken(token);
   }
 }

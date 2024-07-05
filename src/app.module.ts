@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'; // Import TypeORM module
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
-import { User } from './users/user.entity'; 
+import { User } from './users/user.entity';
 import { OtpModule } from './otp/otp.module';
 import { UserNotConfirmed } from './users/user-not-confirmed.entity';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ConfigModule } from '@nestjs/config';
-
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { TokenBlacklist } from './auth/TokenBlacklist.entity';
+import { BlacklistMiddleware } from './auth/blacklist.middleware';
 
 @Module({
   imports: [
@@ -14,20 +16,32 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres', // Specify the type of database
-      host: 'localhost', // Database host
-      port: 5432, // Database port
-      username: 'postgres', // Database username
-      password: 'root', // Database password (change as per your setup)
-      database: 'englishSpoken', // Database name
-      entities: [User,UserNotConfirmed], // Specify entities (if any)
-      synchronize: true, // Automatic schema synchronization (not recommended for production)
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'root',
+      database: 'englishSpoken',
+      entities: [User, UserNotConfirmed, TokenBlacklist],
+      synchronize: true,
     }),
     ScheduleModule.forRoot(),
     UsersModule,
     OtpModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1h' },
+      }),
+    }),
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(BlacklistMiddleware).forRoutes('*');
+  }
+}

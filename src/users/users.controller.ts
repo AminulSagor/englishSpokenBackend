@@ -1,6 +1,8 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
+import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 
 export class CreateUserDto {
   username: string;
@@ -43,5 +45,16 @@ export class UsersController {
   async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
     const { email, password } = loginDto;
     return this.usersService.login(email, password);
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Req() req: Request): Promise<{ message: string }> {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      throw new BadRequestException('No token provided');
+    }
+    await this.usersService.logout(token);
+    return { message: 'Logged out successfully' };
   }
 }
