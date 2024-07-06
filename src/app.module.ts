@@ -9,6 +9,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TokenBlacklist } from './auth/TokenBlacklist.entity';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
+import { UserDetails } from './users/user-details.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { BlacklistMiddleware } from './auth/blacklist.middleware';
       username: 'postgres',
       password: 'root',
       database: 'englishSpoken',
-      entities: [User, UserNotConfirmed, TokenBlacklist],
+      entities: [User, UserNotConfirmed, TokenBlacklist, UserDetails],
       synchronize: true,
     }),
     ScheduleModule.forRoot(),

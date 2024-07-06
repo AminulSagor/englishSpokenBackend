@@ -10,10 +10,14 @@ import { OtpService } from 'src/otp/otp.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { TokenBlacklist } from 'src/auth/TokenBlacklist.entity';
+import { UserDetails } from './user-details.entity';
+import { MulterConfigModule } from 'src/multer-config.module';
+import { MulterConfigService } from 'src/filehandling';
+
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserNotConfirmed,TokenBlacklist]),
+    TypeOrmModule.forFeature([User, UserNotConfirmed,TokenBlacklist,UserDetails]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -23,8 +27,9 @@ import { TokenBlacklist } from 'src/auth/TokenBlacklist.entity';
       }),
       inject: [ConfigService],
     }),
+    MulterConfigModule,
   ],
-  providers: [UsersService, OtpService, JwtStrategy],
+  providers: [UsersService, OtpService, JwtStrategy, MulterConfigService],
   controllers: [UsersController],
   exports: [UsersService],
 })

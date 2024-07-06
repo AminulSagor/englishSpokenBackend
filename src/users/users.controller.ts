@@ -1,8 +1,13 @@
-import { Controller, Post, Body, BadRequestException, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UseGuards, Req, Put, UseInterceptors, UploadedFile, UsePipes, ValidationPipe, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { AuthenticatedRequest } from '../auth/request.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import * as path from 'path';
+
 
 export class CreateUserDto {
   username: string;
@@ -21,6 +26,14 @@ export class LoginDto {
   password: string;
 }
 
+export class UpdateUserDetailsDto {
+  gender?: string;
+  country?: string;
+  city?: string;
+  institution?: string;
+  dateOfBirth?: Date;
+  profilePicture?: any; 
+}
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -57,4 +70,55 @@ export class UsersController {
     await this.usersService.logout(token);
     return { message: 'Logged out successfully' };
   }
+
+  @Put('update-details')
+@UseGuards(AuthGuard('jwt'))
+@UseInterceptors(
+  FileInterceptor('profilePicture', {
+    fileFilter: (req, file, callback) => {
+      if (file.originalname.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Invalid file type: Only JPG, JPEG, PNG, and GIF files are allowed.'), false);
+      }
+    },
+    limits: {
+      fileSize: 1024 * 1024 * 5, // 5MB
+    },
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, callback) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const extension = path.extname(file.originalname);
+        const baseName = path.basename(file.originalname, extension);
+        callback(null, `${baseName}-${uniqueSuffix}${extension}`);
+      },
+    }),
+  }),
+)
+@UsePipes(new ValidationPipe())
+async updateProfileAndPicture(
+  @UploadedFile() file: Express.Multer.File,
+  @Body() updateUserDetailsDto: UpdateUserDetailsDto,
+  @Req() req: AuthenticatedRequest
+): Promise<{ message: string }> {
+  const user = req.user as User;
+
+  if (!user) {
+    throw new UnauthorizedException('User not found in request');
+  }
+
+  if (updateUserDetailsDto) {
+    await this.usersService.updateUserDetails(user.id, updateUserDetailsDto); // Ensure updateUserDetailsDto contains valid data
+  }
+
+  let profilePictureUrl = '';
+  if (file) {
+    const filePath = await this.usersService.updateUserProfilePicture(user.id, file);
+    profilePictureUrl = filePath;
+  }
+
+  return { message: 'User details updated successfully' };
+}
+
 }

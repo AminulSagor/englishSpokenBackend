@@ -1,6 +1,7 @@
 // src/users/user.entity.ts
 
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { UserDetails } from './user-details.entity';
 
 @Entity()
 export class User {
@@ -16,5 +17,7 @@ export class User {
   @Column()
   password: string;
 
+  @OneToOne(() => UserDetails, (userDetails) => userDetails.user, { cascade: true })
+  userDetails: UserDetails;
 
 }
