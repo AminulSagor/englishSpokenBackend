@@ -145,4 +145,14 @@ export class UsersService {
 
     return this.userDetailsRepository.save(userDetails);
   }
+
+  async getUserDetails(userId: number): Promise<UserDetails> {
+    const userDetails = await this.userDetailsRepository.findOne({ where: { user: { id: userId } } });
+
+    if (!userDetails) {
+      throw new NotFoundException('User details not found');
+    }
+
+    return userDetails;
+  }
 }

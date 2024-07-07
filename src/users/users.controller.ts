@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException, UseGuards, Req, Put, UseInterceptors, UploadedFile, UsePipes, ValidationPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, UseGuards, Req, Put, UseInterceptors, UploadedFile, UsePipes, ValidationPipe, UnauthorizedException, Get } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
@@ -7,6 +7,7 @@ import { AuthenticatedRequest } from '../auth/request.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import * as path from 'path';
+import { UserDetails } from './user-details.entity';
 
 
 export class CreateUserDto {
@@ -119,6 +120,24 @@ async updateProfileAndPicture(
   }
 
   return { message: 'User details updated successfully' };
+}
+
+
+@Get('details')
+@UseGuards(AuthGuard('jwt'))
+async getUserDetails(@Req() req: AuthenticatedRequest): Promise<{ username: string, email: string, userDetails: UserDetails }> {
+  const user = req.user as User;
+
+  if (!user) {
+    throw new UnauthorizedException('User not found in request');
+  }
+
+  const userDetails = await this.usersService.getUserDetails(user.id);
+  return {
+    username: user.username,
+    email: user.email,
+    userDetails
+  };
 }
 
 }
