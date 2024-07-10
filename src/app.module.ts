@@ -10,6 +10,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { TokenBlacklist } from './auth/TokenBlacklist.entity';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
 import { UserDetails } from './users/user-details.entity';
+import { ChatModule } from './chat/chat.module';
+import { Message } from './chat/entities/message.entity';
 
 @Module({
   imports: [
@@ -23,18 +25,19 @@ import { UserDetails } from './users/user-details.entity';
       username: 'postgres',
       password: 'root',
       database: 'englishSpoken',
-      entities: [User, UserNotConfirmed, TokenBlacklist, UserDetails],
+      entities: [User, UserNotConfirmed, TokenBlacklist, UserDetails, Message],
       synchronize: true,
     }),
     ScheduleModule.forRoot(),
     UsersModule,
     OtpModule,
+    ChatModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
+        signOptions: { expiresIn: '10h' },
       }),
     }),
   ],
