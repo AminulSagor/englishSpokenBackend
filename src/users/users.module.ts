@@ -11,8 +11,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { TokenBlacklist } from 'src/auth/TokenBlacklist.entity';
 import { UserDetails } from './user-details.entity';
-import { MulterConfigModule } from 'src/multer-config.module';
-import { MulterConfigService } from 'src/filehandling';
+import { MulterConfigModule } from 'src/fileHandelling/multer-config.module';
+import { MulterConfigService } from 'src/fileHandelling/filehandling';
 
 
 @Module({
