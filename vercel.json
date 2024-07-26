@@ -1,8 +1,28 @@
 {
+  "version": 2,
+  "env": {
+    "JWT_SECRET": "SaGor"
+  },
+  "builds": [
+    {
+      "src": "src/main.ts",
+      "use": "@vercel/node",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/main.js",
+      "methods": ["GET", "POST", "PUT", "DELETE"]
     }
   ]
 }
