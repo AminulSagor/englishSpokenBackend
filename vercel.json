@@ -1,17 +1,5 @@
 {
-  "version": 2,
-  "env": {
-    "JWT_SECRET": "SaGor"
-  },
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/src/$1" },
-    { "src": "/(.*)", "dest": "/" }
-  ]
+   "rewrites":  [
+       {"source": "/(.*)", "destination": "/"}
+    ]
 }
-
