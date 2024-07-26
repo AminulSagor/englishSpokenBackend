@@ -1,12 +1,17 @@
 {
-    "version":2,
-    "builds": [
-      { "src": "*.js", "use": "@vercel/node" }
-    ],
-    "routes": [
-        {
-          "src": "/(.*)",
-          "dest": "/"
-        }
-    ]
-  }
+  "version": 2,
+  "env": {
+    "JWT_SECRET": "SaGor"
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/dist/$1" },
+    { "src": "/(.*)", "dest": "/dist/main" }
+  ]
+}
+
