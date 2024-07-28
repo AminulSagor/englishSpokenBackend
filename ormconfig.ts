@@ -1,6 +1,9 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { config } from 'dotenv';
 
-const config: TypeOrmModuleOptions = {
+config();
+
+const ormConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   url: process.env.DATABASE_URL,
   synchronize: true, // Ensure this is false in production
@@ -10,4 +13,4 @@ const config: TypeOrmModuleOptions = {
   },
 };
 
-export default config;
+export default ormConfig;
