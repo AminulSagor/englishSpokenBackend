@@ -55,6 +55,15 @@ export class UsersController {
     return await this.usersService.verifyOtpAndCreateUser(email, otp);
   }
 
+  @Post('resend-otp')
+  async resendOtp(@Body('email') email: string): Promise<{ message: string }> {
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+    await this.usersService.resendOtp(email);
+    return { message: 'New OTP has been sent to your email' };
+  }
+
   @Post('login')
   async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
     const { email, password } = loginDto;
