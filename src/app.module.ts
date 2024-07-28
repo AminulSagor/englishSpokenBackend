@@ -1,24 +1,33 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { OtpModule } from './otp/otp.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
-import ormConfig from './ormconfig';
-import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot(ormConfig),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        synchronize: true,
+        autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      }),
+      inject: [ConfigService],
+    }),
     ScheduleModule.forRoot(),
     UsersModule,
     OtpModule,
-    ChatModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
