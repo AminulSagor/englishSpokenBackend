@@ -32,7 +32,7 @@ import { BlacklistMiddleware } from './auth/blacklist.middleware';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>("SaGor"),
         signOptions: { expiresIn: '10h' },
       }),
     }),
