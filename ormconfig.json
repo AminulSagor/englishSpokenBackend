@@ -1,13 +1,11 @@
 {
   "type": "postgres",
-  "host": "localhost",
-  "port": 5432,
-  "username": "postgres",
-  "password": "root",
-  "database": "englishSpoken",
-  "entities": ["src/**/*.entity.ts"],
-  "migrations": ["src/migration/*.ts"],
-  "cli": {
-    "migrationsDir": "src/migration"
+  "url": "process.env.DATABASE_URL",
+  "synchronize": false, 
+  "entities": [
+    "dist/**/*.entity.js"
+  ],
+  "ssl": {
+    "rejectUnauthorized": false
   }
 }
