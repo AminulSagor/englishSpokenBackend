@@ -100,12 +100,12 @@ export class UsersService {
   async login(email: string, password: string): Promise<{ accessToken: string }> {
     const user = await this.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email not found.');
     }
 
     const isPasswordValid = await this.validatePassword(user, password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Password not matched');
+      throw new UnauthorizedException('Password not matched.');
     }
 
     const payload = { username: user.username, sub: user.id };
