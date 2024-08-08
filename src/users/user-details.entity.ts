@@ -24,6 +24,12 @@ export class UserDetails {
   @Column({ nullable: true })
   profilePicture: string;
 
+  @Column({ nullable: true })
+  interest: string;
+
+  @Column({ nullable: true })
+  division: string;
+
   @OneToOne(() => User, user => user.userDetails)
   @JoinColumn()
   user: User;

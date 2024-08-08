@@ -17,7 +17,7 @@ export class HomeService {
       .leftJoinAndSelect('user.userDetails', 'userDetails');
 
     if (division && division.length > 0) {
-      query.andWhere('user.division IN (:...divisions)', { divisions: division });
+      query.andWhere('userDetails.division IN (:...divisions)', { divisions: division });
     }
 
     if (interest && interest.length > 0) {
@@ -30,15 +30,25 @@ export class HomeService {
 
     query.andWhere('user.active = :active', { active: true });
 
-    return await query.getMany();
+    // Log the query to debug
+    const sql = query.getSql();
+    console.log(sql);
+
+    try {
+      return await query.getMany();
+    } catch (error) {
+      console.error('Error executing query:', error);
+      throw error;
+    }
   }
 
   filterUsers(users: any[], filterDto: FilterDto) {
     const { division, interest, name } = filterDto;
     return users.filter(user =>
-      (division.length === 0 || division.includes(user.division)) &&
+      (division.length === 0 || division.includes(user.userDetails.division)) &&
       (interest.length === 0 || interest.includes(user.userDetails.interest)) &&
-      (!name || user.name.toLowerCase().includes(name.toLowerCase()))
+      (!name || user.name.toLowerCase().includes(name.toLowerCase())) &&
+      user.active  // Check active status
     );
   }
 }
