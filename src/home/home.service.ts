@@ -25,14 +25,10 @@ export class HomeService {
     }
 
     if (name) {
-      query.andWhere('user.name ILIKE :name', { name: `%${name}%` });
+      query.andWhere('user.username ILIKE :name', { name: `%${name}%` });
     }
 
     query.andWhere('user.active = :active', { active: true });
-
-    // Log the query to debug
-    const sql = query.getSql();
-    console.log(sql);
 
     try {
       return await query.getMany();
@@ -47,8 +43,8 @@ export class HomeService {
     return users.filter(user =>
       (division.length === 0 || division.includes(user.userDetails.division)) &&
       (interest.length === 0 || interest.includes(user.userDetails.interest)) &&
-      (!name || user.name.toLowerCase().includes(name.toLowerCase())) &&
-      user.active  // Check active status
+      (!name || user.username.toLowerCase().includes(name.toLowerCase())) &&
+      user.active
     );
   }
 }
