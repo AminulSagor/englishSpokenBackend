@@ -33,17 +33,31 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
     const userData = this.activeUsers.get(client.id);
     if (userData) {
-      await this.usersRepository.update({ id: userData.id }, { active: false });
-      this.activeUsers.delete(client.id);
-      this.broadcastActiveUsers();
+      try {
+        await this.usersRepository.update({ id: userData.id }, { active: false });
+        this.activeUsers.delete(client.id);
+        this.broadcastActiveUsers();
+      } catch (error) {
+        console.error('Error updating user status on disconnect:', error);
+      }
     }
   }
 
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
+    console.log('Setting active user:', userData);
+    if (!userData || !userData.id) {
+      console.error('Invalid userData:', userData);
+      return;
+    }
+
     this.activeUsers.set(client.id, userData);
-    await this.usersRepository.update({ id: userData.id }, { active: true });
-    this.broadcastActiveUsers();
+    try {
+      await this.usersRepository.update({ id: userData.id }, { active: true });
+      this.broadcastActiveUsers();
+    } catch (error) {
+      console.error('Error updating user status on set active:', error);
+    }
   }
 
   @SubscribeMessage('getActiveUsers')
