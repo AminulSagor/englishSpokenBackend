@@ -20,9 +20,9 @@ import { HomeModule } from './home/home.module';
         url: configService.get<string>('DATABASE_URL'),
         synchronize: true,
         autoLoadEntities: true,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+       // ssl: {
+        //  rejectUnauthorized: false,
+        //},
       }),
       inject: [ConfigService],
     }),
