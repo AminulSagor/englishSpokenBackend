@@ -12,7 +12,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
 
-
 @WebSocketGateway()
 export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -45,26 +44,14 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
-    console.log('Setting active user:', userData);
-    console.log('Type of userData:', typeof userData);
-    if (typeof userData === 'string') {
-      try {
-        userData = JSON.parse(userData);
-        console.log('Parsed userData:', userData);
-      } catch (error) {
-        console.error('Failed to parse userData string:', error);
-        return;
-      }
-    }
-  
-    console.log('userData keys:', Object.keys(userData));
-    
+    userData = this.parseData(userData);
+
     if (!userData || !userData.id) {
       console.error('Invalid userData:', userData);
       return;
     }
 
-    this.activeUsers.set(client.id, userData);
+    this.activeUsers.set(client.id, { id: userData.id });
     try {
       await this.usersRepository.update({ id: userData.id }, { active: true });
       this.broadcastActiveUsers();
@@ -75,6 +62,8 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('getActiveUsers')
   handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
+    filterDto = this.parseData(filterDto);
+
     const activeUsersArray = Array.from(this.activeUsers.values());
     const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
     client.emit('activeUsers', filteredUsers);
@@ -83,5 +72,19 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   broadcastActiveUsers() {
     const activeUsersArray = Array.from(this.activeUsers.values());
     this.server.emit('activeUsers', activeUsersArray);
+  }
+
+  // Utility function to parse data if it is a string
+  private parseData(data: any) {
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+        console.log('Parsed data:', data);
+      } catch (error) {
+        console.error('Failed to parse data string:', error);
+        return null;
+      }
+    }
+    return data;
   }
 }
