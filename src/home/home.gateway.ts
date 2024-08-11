@@ -46,6 +46,8 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
     console.log('Setting active user:', userData);
+    console.log('Type of userData:', typeof userData);
+console.log('userData keys:', Object.keys(userData));
     if (!userData || !userData.id) {
       console.error('Invalid userData:', userData);
       return;
