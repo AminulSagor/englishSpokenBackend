@@ -44,15 +44,15 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
-    userData = this.parseData(userData);
-
-    if (!userData || !userData.id) {
-      console.error('Invalid userData:', userData);
-      return;
-    }
-
-    this.activeUsers.set(client.id, { id: userData.id });
     try {
+      userData = this.parseData(userData);
+
+      if (!userData || !userData.id) {
+        console.error('Invalid userData:', userData);
+        return;
+      }
+
+      this.activeUsers.set(client.id, { id: userData.id });
       await this.usersRepository.update({ id: userData.id }, { active: true });
       this.broadcastActiveUsers();
     } catch (error) {
@@ -62,11 +62,15 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('getActiveUsers')
   handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
-    filterDto = this.parseData(filterDto);
+    try {
+      filterDto = this.parseData(filterDto);
 
-    const activeUsersArray = Array.from(this.activeUsers.values());
-    const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
-    client.emit('activeUsers', filteredUsers);
+      const activeUsersArray = Array.from(this.activeUsers.values());
+      const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
+      client.emit('activeUsers', filteredUsers);
+    } catch (error) {
+      console.error('Error fetching active users:', error);
+    }
   }
 
   broadcastActiveUsers() {
