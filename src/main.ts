@@ -11,7 +11,9 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
   const port = process.env.PORT || 3000;
+  console.log(`Starting server on port ${port}`);
   await app.listen(port);
+  console.log(`Server started on port ${port}`);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
