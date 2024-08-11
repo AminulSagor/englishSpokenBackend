@@ -34,7 +34,7 @@ export class HomeService {
       return await query.getMany();
     } catch (error) {
       console.error('Error executing query:', error);
-      throw error;
+      throw new Error('Failed to fetch active users'); // Provide a custom error message
     }
   }
 
