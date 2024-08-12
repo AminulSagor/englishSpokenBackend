@@ -27,6 +27,11 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
+
+    // Set a timeout to disconnect the client after 30 seconds
+    setTimeout(() => {
+      client.disconnect();
+    }, 30000);
   }
 
   async handleDisconnect(client: Socket) {

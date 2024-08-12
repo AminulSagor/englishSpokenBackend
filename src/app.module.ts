@@ -29,7 +29,7 @@ import { HomeModule } from './home/home.module';
     ScheduleModule.forRoot(),
     UsersModule,
     OtpModule,
-    HomeModule, 
+    HomeModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
