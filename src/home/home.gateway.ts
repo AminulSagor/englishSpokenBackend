@@ -74,18 +74,23 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('getActiveUsers')
-  handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
-    try {
-      this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
-      filterDto = this.parseData(filterDto);
+handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
+  try {
+    this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
 
-      const activeUsersArray = Array.from(this.activeUsers.values());
-      const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
-      client.emit('activeUsers', filteredUsers);
-    } catch (error) {
-      this.logger.error('Error fetching active users', error.stack);
+    // Ensure filterDto is not null or undefined
+    if (!filterDto) {
+      this.logger.warn('filterDto is null or undefined');
+      filterDto = {}; // or provide default values as needed
     }
+
+    const activeUsersArray = Array.from(this.activeUsers.values());
+    const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
+    client.emit('activeUsers', filteredUsers);
+  } catch (error) {
+    this.logger.error('Error fetching active users', error.stack);
   }
+}
 
   broadcastActiveUsers() {
     this.logger.log('Broadcasting active users to all clients');
