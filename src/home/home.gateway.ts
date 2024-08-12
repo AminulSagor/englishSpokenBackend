@@ -11,11 +11,12 @@ import { FilterDto } from './dto/filter.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway()
 export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
-
+  private readonly logger = new Logger(HomeGateway.name);
   private activeUsers: Map<string, any> = new Map();
 
   constructor(
@@ -25,11 +26,11 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   async handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    this.logger.log(`Client connected: ${client.id}`);
   }
 
   async handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
     const userData = this.activeUsers.get(client.id);
     if (userData) {
       try {
@@ -37,7 +38,7 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.activeUsers.delete(client.id);
         this.broadcastActiveUsers();
       } catch (error) {
-        console.error('Error updating user status on disconnect:', error);
+        this.logger.error('Error updating user status on disconnect', error.stack);
       }
     }
   }
@@ -45,10 +46,11 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
     try {
+      this.logger.log(`Received setActiveUser for client: ${client.id}`);
       userData = this.parseData(userData);
 
       if (!userData || !userData.id) {
-        console.error('Invalid userData:', userData);
+        this.logger.warn('Invalid userData received', userData);
         return;
       }
 
@@ -56,24 +58,26 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.usersRepository.update({ id: userData.id }, { active: true });
       this.broadcastActiveUsers();
     } catch (error) {
-      console.error('Error updating user status on set active:', error);
+      this.logger.error('Error updating user status on setActiveUser', error.stack);
     }
   }
 
   @SubscribeMessage('getActiveUsers')
   handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
     try {
+      this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
       filterDto = this.parseData(filterDto);
 
       const activeUsersArray = Array.from(this.activeUsers.values());
       const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
       client.emit('activeUsers', filteredUsers);
     } catch (error) {
-      console.error('Error fetching active users:', error);
+      this.logger.error('Error fetching active users', error.stack);
     }
   }
 
   broadcastActiveUsers() {
+    this.logger.log('Broadcasting active users to all clients');
     const activeUsersArray = Array.from(this.activeUsers.values());
     this.server.emit('activeUsers', activeUsersArray);
   }
@@ -83,9 +87,9 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (typeof data === 'string') {
       try {
         data = JSON.parse(data);
-        console.log('Parsed data:', data);
+        this.logger.debug('Parsed data:', data);
       } catch (error) {
-        console.error('Failed to parse data string:', error);
+        this.logger.error('Failed to parse data string', error.stack);
         return null;
       }
     }
