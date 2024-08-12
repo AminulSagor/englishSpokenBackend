@@ -13,7 +13,13 @@ import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
 import { Logger } from '@nestjs/common';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
+})
 export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(HomeGateway.name);
