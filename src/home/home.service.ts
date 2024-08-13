@@ -15,28 +15,34 @@ export class HomeService {
 
   async getActiveUsers(filterDto: FilterDto): Promise<User[]> {
     this.logger.log('Getting active users');
-    const { division, interest, name } = filterDto;
+
+    // Destructure with default values to ensure proper handling
+    const { division = [], interest = [], name = '' } = filterDto || {};
 
     const query = this.usersRepository.createQueryBuilder('user')
       .leftJoinAndSelect('user.userDetails', 'userDetails');
 
     this.logger.debug(`FilterDto: ${JSON.stringify(filterDto)}`);
 
-    if (division && division.length > 0) {
+    // Filter by division if provided
+    if (division.length > 0) {
       query.andWhere('userDetails.division IN (:...divisions)', { divisions: division });
       this.logger.debug(`Filtering by division: ${division}`);
     }
 
-    if (interest && interest.length > 0) {
+    // Filter by interest if provided
+    if (interest.length > 0) {
       query.andWhere('userDetails.interest IN (:...interests)', { interests: interest });
       this.logger.debug(`Filtering by interest: ${interest}`);
     }
 
+    // Filter by name if provided
     if (name) {
       query.andWhere('user.username ILIKE :name', { name: `%${name}%` });
       this.logger.debug(`Filtering by name: ${name}`);
     }
 
+    // Always filter by active status
     query.andWhere('user.active = :active', { active: true });
     this.logger.debug('Filtering by active users');
 
@@ -50,9 +56,11 @@ export class HomeService {
     }
   }
 
-  filterUsers(users: any[], filterDto: FilterDto) {
-    const { division, interest, name } = filterDto;
+  filterUsers(users: User[], filterDto: FilterDto): User[] {
     this.logger.debug('Filtering users manually in memory');
+
+    // Destructure with default values to ensure proper handling
+    const { division = [], interest = [], name = '' } = filterDto || {};
 
     return users.filter(user =>
       (division.length === 0 || division.includes(user.userDetails.division)) &&
