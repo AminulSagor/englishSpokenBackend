@@ -12,7 +12,7 @@ import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { BadRequestException, Logger } from '@nestjs/common';
-import { CreateMessageDto } from './dtos/create-message.dto';
+
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -61,8 +61,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
     const { content, receiverId } = data;
 
-
-
     if (!content || !receiverId) {
       this.logger.error('Validation failed: content and receiverId are required');
       client.emit('error', { message: 'Validation failed: content and receiverId are required' });
@@ -83,10 +81,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
+  async handleJoinRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
     client.join(room);
     client.emit('joinedRoom', room);
     this.logger.log(`Client ${client.data.user?.id} joined room ${room}`);
+
+    // Fetch past messages for the room
+    try {
+      const pastMessages = await this.chatService.getMessagesForRoom(room);
+
+      // Emit the past messages to the client
+      client.emit('receiveMessage', pastMessages);
+    } catch (error) {
+      this.logger.error('Failed to fetch past messages:', error.message);
+      client.emit('error', { message: 'Failed to fetch past messages' });
+    }
   }
 
   @SubscribeMessage('leaveRoom')
