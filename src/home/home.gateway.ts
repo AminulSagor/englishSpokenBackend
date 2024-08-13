@@ -36,18 +36,18 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const decoded = this.jwtService.verify(token);
       console.log('Decoded token:', decoded); // Log the entire decoded token
   
-      // Check if userId is present in the decoded token
-      if (!decoded.userId) {
-        console.error('userId is missing in the decoded token. Disconnecting client:', client.id);
+      const userId = decoded.sub; // Use 'sub' as the user ID
+      if (!userId) {
+        console.error('User ID (sub) is missing in the decoded token. Disconnecting client:', client.id);
         client.disconnect();
         return;
       }
   
-      console.log('Token verified successfully for user:', decoded.userId);
+      console.log('Token verified successfully for user:', userId);
   
       // Mark the user as active using the decoded userId
-      await this.homeService.setUserActive(decoded.userId);
-      console.log(`User ${decoded.userId} marked as active`);
+      await this.homeService.setUserActive(userId);
+      console.log(`User ${userId} marked as active`);
     } catch (error) {
       console.error('Error during connection:', error.message);
       client.disconnect();
