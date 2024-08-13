@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable , Logger} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
@@ -6,6 +6,7 @@ import { CreateMessageDto } from './dtos/create-message.dto';
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
   constructor(
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
@@ -30,11 +31,18 @@ export class ChatService {
 
   // Retrieve all messages for a specific room, ordered by creation time
   async getMessagesForRoom(room: string): Promise<Message[]> {
-    return this.messageRepository.find({
+    this.logger.log(`Querying messages for room: '${room}'`);
+    
+    // Fetch the messages from the database
+    const messages = await this.messageRepository.find({
       where: { room },
       order: { createdAt: 'ASC' },
     });
-  }
+
+    this.logger.log(`Messages found for room '${room}': ${JSON.stringify(messages)}`);
+    return messages;
+}
+
 
   // Get the most recent message for a specific room
   async getLastMessageForRoom(room: string): Promise<Message> {
