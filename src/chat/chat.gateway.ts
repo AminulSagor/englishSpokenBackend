@@ -83,27 +83,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinRoom')
-async handleJoinRoom(@MessageBody() roomData: any, @ConnectedSocket() client: Socket) {
-  const room = String(roomData.room);  // Ensure room is treated as a string
-  this.logger.log(`Client ${client.data.user?.id} joining room: '${room}'`);
+  async handleJoinRoom(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
+    const room = data.room ? String(data.room) : undefined;
   
-  client.join(room);
-  client.emit('joinedRoom', room);
-  this.logger.log(`Client ${client.data.user?.id} joined room '${room}' successfully`);
-
-  // Fetch past messages for the room
-  try {
-    this.logger.log(`Fetching past messages for room '${room}'`);
-    const pastMessages = await this.chatService.getMessagesForRoom(room);
-
-    // Log and emit the past messages
-    this.logger.log(`Messages found for room '${room}': ${JSON.stringify(pastMessages)}`);
-    client.emit('receiveMessage', pastMessages);
-  } catch (error) {
-    this.logger.error(`Failed to fetch past messages for room '${room}': ${error.message}`);
-    client.emit('error', { message: 'Failed to fetch past messages' });
+    if (!room) {
+      this.logger.error('Room ID is undefined, cannot join room');
+      client.emit('error', { message: 'Room ID is required to join a room' });
+      return;
+    }
+  
+    this.logger.log(`Client ${client.data.user?.id} joining room: '${room}'`);
+  
+    client.join(room);
+    client.emit('joinedRoom', room);
+    this.logger.log(`Client ${client.data.user?.id} joined room '${room}' successfully`);
+  
+    // Fetch past messages for the room
+    try {
+      this.logger.log(`Fetching past messages for room '${room}'`);
+      const pastMessages = await this.chatService.getMessagesForRoom(room);
+  
+      // Log and emit the past messages
+      this.logger.log(`Messages found for room '${room}': ${JSON.stringify(pastMessages)}`);
+      client.emit('receiveMessage', pastMessages);
+    } catch (error) {
+      this.logger.error(`Failed to fetch past messages for room '${room}': ${error.message}`);
+      client.emit('error', { message: 'Failed to fetch past messages' });
+    }
   }
-}
+  
 
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
