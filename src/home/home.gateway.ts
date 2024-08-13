@@ -33,16 +33,22 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
+    
+    // Log connection details
+    this.logger.debug(`Client connection details: ${JSON.stringify(client.handshake)}`);
 
     setTimeout(() => {
+      this.logger.warn(`Disconnecting client due to timeout: ${client.id}`);
       client.disconnect();
     }, 30000);
   }
 
   async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
+    
     const userData = this.activeUsers.get(client.id);
     if (userData) {
+      this.logger.debug(`Removing user from active users list: ${JSON.stringify(userData)}`);
       try {
         await this.usersRepository.update({ id: userData.id }, { active: false });
         this.activeUsers.delete(client.id);
@@ -50,69 +56,72 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       } catch (error) {
         this.logger.error('Error updating user status on disconnect', error.stack);
       }
+    } else {
+      this.logger.debug(`No active user found for client ID: ${client.id}`);
     }
   }
 
   @SubscribeMessage('setActiveUser')
   async handleSetActiveUser(client: Socket, userData: any) {
+    this.logger.log(`Received setActiveUser for client: ${client.id}`);
+    userData = this.parseData(userData);
+
+    if (!userData || !userData.id) {
+      this.logger.warn('Invalid userData received', userData);
+      client.emit('error', { message: 'Validation failed: userData and userData.id are required' });
+      return;
+    }
+
     try {
-      this.logger.log(`Received setActiveUser for client: ${client.id}`);
-      userData = this.parseData(userData);
-
-      if (!userData || !userData.id) {
-        this.logger.warn('Invalid userData received', userData);
-        client.emit('error', { message: 'Validation failed: userData and userData.id are required' });
-        throw new BadRequestException('Validation failed: userData and userData.id are required');
-      }
-
+      this.logger.debug(`Setting user as active: ${JSON.stringify(userData)}`);
       this.activeUsers.set(client.id, { id: userData.id });
       await this.usersRepository.update({ id: userData.id }, { active: true });
       this.broadcastActiveUsers();
     } catch (error) {
       this.logger.error('Error updating user status on setActiveUser', error.stack);
       client.emit('error', { message: 'Failed to update user status' });
-      throw new BadRequestException('Failed to update user status');
     }
   }
 
   @SubscribeMessage('getActiveUsers')
   async handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
+    this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
+    
+    // Log the filterDto for debugging purposes
+    this.logger.debug(`Filter DTO received: ${JSON.stringify(filterDto)}`);
+    
+    // Initialize filterDto if null or undefined
+    filterDto = filterDto || {};
+  
+    // Validate each property in filterDto
+    filterDto.division = filterDto.division || [];
+    filterDto.interest = filterDto.interest || [];
+    filterDto.name = filterDto.name || '';
+
     try {
-      this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
-  
-      // Initialize filterDto if null or undefined
-      filterDto = filterDto || {};
-  
-      // Validate each property in filterDto
-      filterDto.division = filterDto.division || [];
-      filterDto.interest = filterDto.interest || [];
-      filterDto.name = filterDto.name || '';
-  
-      // Fetch all active users from the database
+      this.logger.debug('Fetching active users from the database with filter:', filterDto);
       const activeUsers = await this.homeService.getActiveUsers(filterDto);
-  
-      // Emit the list of active users to the requesting client
+      this.logger.debug(`Active users fetched: ${JSON.stringify(activeUsers)}`);
       client.emit('activeUsers', activeUsers);
     } catch (error) {
       this.logger.error('Error fetching active users', error.stack);
       client.emit('error', { message: 'Failed to fetch active users' });
-      throw new BadRequestException('Failed to fetch active users');
     }
   }
-  
-
 
   broadcastActiveUsers() {
     this.logger.log('Broadcasting active users to all clients');
     const activeUsersArray = Array.from(this.activeUsers.values());
+    this.logger.debug(`Active users being broadcasted: ${JSON.stringify(activeUsersArray)}`);
     this.server.emit('activeUsers', activeUsersArray);
   }
 
   private parseData(data: any) {
     if (typeof data === 'string') {
       try {
+        this.logger.debug('Attempting to parse string data');
         data = JSON.parse(data);
-        this.logger.debug('Parsed data:', data);
+        this.logger.debug('Parsed data successfully:', data);
       } catch (error) {
         this.logger.error('Failed to parse data string', error.stack);
         return null;
