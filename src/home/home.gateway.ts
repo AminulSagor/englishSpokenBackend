@@ -17,8 +17,8 @@ import { Logger, BadRequestException } from '@nestjs/common';
   cors: {
     origin: '*',
   },
-  pingTimeout: 60000, // 60 seconds
-  pingInterval: 25000, // 25 seconds
+  pingTimeout: 120000, // 120 seconds
+  pingInterval: 50000, // 50 seconds
 })
 export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -29,13 +29,7 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly homeService: HomeService,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {
-    try {
-      console.log('WebSocket server initialized');
-    } catch (error) {
-      this.logger.error('Error during WebSocket server initialization', error.stack);
-    }
-  }
+  ) {}
 
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);

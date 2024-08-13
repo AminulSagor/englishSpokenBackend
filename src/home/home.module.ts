@@ -12,9 +12,4 @@ import { HomeGateway } from './home.gateway';
   controllers: [HomeController],
   providers: [HomeService, HomeGateway],
 })
-export class HomeModule {
-
-  constructor() {
-    console.log('HomeModule initialized');
-  }
-}
+export class HomeModule {}
