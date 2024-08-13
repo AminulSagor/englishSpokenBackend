@@ -83,24 +83,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
-    this.logger.log(`Client ${client.data.user?.id} joining room: ${room}`);
-    client.join(room);
-    client.emit('joinedRoom', room);
-    this.logger.log(`Client ${client.data.user?.id} joined room ${room} successfully`);
+async handleJoinRoom(@MessageBody() roomData: any, @ConnectedSocket() client: Socket) {
+  const room = String(roomData.room);  // Ensure room is treated as a string
+  this.logger.log(`Client ${client.data.user?.id} joining room: '${room}'`);
+  
+  client.join(room);
+  client.emit('joinedRoom', room);
+  this.logger.log(`Client ${client.data.user?.id} joined room '${room}' successfully`);
 
-    try {
-      this.logger.log(`Fetching past messages for room ${room}`);
-      const pastMessages = await this.chatService.getMessagesForRoom(room);
-      this.logger.log(`Fetched past messages for room ${room}: ${JSON.stringify(pastMessages)}`);
+  // Fetch past messages for the room
+  try {
+    this.logger.log(`Fetching past messages for room '${room}'`);
+    const pastMessages = await this.chatService.getMessagesForRoom(room);
 
-      client.emit('receiveMessage', pastMessages);
-      this.logger.log(`Past messages emitted to client ${client.data.user?.id}`);
-    } catch (error) {
-      this.logger.error(`Failed to fetch past messages for room ${room}: ${error.message}`);
-      client.emit('error', { message: 'Failed to fetch past messages' });
-    }
+    // Log and emit the past messages
+    this.logger.log(`Messages found for room '${room}': ${JSON.stringify(pastMessages)}`);
+    client.emit('receiveMessage', pastMessages);
+  } catch (error) {
+    this.logger.error(`Failed to fetch past messages for room '${room}': ${error.message}`);
+    client.emit('error', { message: 'Failed to fetch past messages' });
   }
+}
 
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
