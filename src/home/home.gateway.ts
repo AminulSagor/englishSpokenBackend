@@ -1,4 +1,3 @@
-// src/home/home.gateway.ts
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket, SubscribeMessage, MessageBody } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { HomeService } from './home.service';
@@ -17,21 +16,43 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(@ConnectedSocket() client: Socket) {
     try {
+      console.log('Client connected:', client.id);
+
       const token = client.handshake.query.token as string;
+      if (!token) {
+        console.error('Token is missing. Disconnecting client:', client.id);
+        client.disconnect();
+        return;
+      }
+
       const decoded = this.jwtService.verify(token);
-      // Perform any additional logic if needed, like setting the user as active
+      console.log('Token verified successfully for user:', decoded.userId);
+
+      // Mark the user as active using the decoded userId
+      await this.homeService.setUserActive(decoded.userId);
+      console.log(`User ${decoded.userId} marked as active`);
     } catch (error) {
+      console.error('Error during connection:', error.message);
       client.disconnect();
     }
   }
 
   async handleDisconnect(@ConnectedSocket() client: Socket) {
     try {
+      console.log('Client disconnected:', client.id);
+
       const token = client.handshake.query.token as string;
-      const decoded = this.jwtService.verify(token);
-      // Perform any additional logic if needed, like setting the user as inactive
+      if (token) {
+        const decoded = this.jwtService.verify(token);
+        
+        // Mark the user as inactive using the decoded userId
+        await this.homeService.setUserInactive(decoded.userId);
+        console.log(`User ${decoded.userId} marked as inactive`);
+      } else {
+        console.warn('Token missing during disconnection handling:', client.id);
+      }
     } catch (error) {
-      console.error('Error handling disconnection:', error);
+      console.error('Error handling disconnection:', error.message);
     }
   }
 
@@ -40,7 +61,13 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() filterUsersDto: FilterUsersDto,
     @ConnectedSocket() client: Socket
   ) {
-    const activeUsers = await this.homeService.getFilteredActiveUsers(filterUsersDto);
-    client.emit('activeUsers', activeUsers);
+    try {
+      console.log('Received request to get active users from client:', client.id);
+      const activeUsers = await this.homeService.getFilteredActiveUsers(filterUsersDto);
+      client.emit('activeUsers', activeUsers);
+      console.log('Active users sent to client:', client.id);
+    } catch (error) {
+      console.error('Error handling getActiveUsers message:', error.message);
+    }
   }
 }
