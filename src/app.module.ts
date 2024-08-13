@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
 import { HomeModule } from './home/home.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { HomeModule } from './home/home.module';
     UsersModule,
     OtpModule,
     HomeModule,
+    ChatModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
