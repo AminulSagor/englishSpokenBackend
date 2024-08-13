@@ -76,27 +76,30 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('getActiveUsers')
-handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
-  try {
-    this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
-
-    // Initialize filterDto if null or undefined
-    filterDto = filterDto || {};
-
-    // Validate each property in filterDto
-    filterDto.division = filterDto.division || [];
-    filterDto.interest = filterDto.interest || [];
-    filterDto.name = filterDto.name || '';
-
-    const activeUsersArray = Array.from(this.activeUsers.values());
-    const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
-    client.emit('activeUsers', filteredUsers);
-  } catch (error) {
-    this.logger.error('Error fetching active users', error.stack);
-    client.emit('error', { message: 'Failed to fetch active users' });
-    throw new BadRequestException('Failed to fetch active users');
+  async handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
+    try {
+      this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
+  
+      // Initialize filterDto if null or undefined
+      filterDto = filterDto || {};
+  
+      // Validate each property in filterDto
+      filterDto.division = filterDto.division || [];
+      filterDto.interest = filterDto.interest || [];
+      filterDto.name = filterDto.name || '';
+  
+      // Fetch all active users from the database
+      const activeUsers = await this.homeService.getActiveUsers(filterDto);
+  
+      // Emit the list of active users to the requesting client
+      client.emit('activeUsers', activeUsers);
+    } catch (error) {
+      this.logger.error('Error fetching active users', error.stack);
+      client.emit('error', { message: 'Failed to fetch active users' });
+      throw new BadRequestException('Failed to fetch active users');
+    }
   }
-}
+  
 
 
   broadcastActiveUsers() {
