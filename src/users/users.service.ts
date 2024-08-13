@@ -63,6 +63,18 @@ export class UsersService {
     }
   }
 
+  async resendOtp(email: string): Promise<void> {
+    const user = await this.usersNotConfirmedRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const newOtp = await this.otpService.generateOtp(email); // This will send the new OTP via email
+    user.otp = newOtp;
+    await this.usersNotConfirmedRepository.save(user);
+  }
+
+
   async findByEmail(email: string): Promise<User | undefined> {
     return this.usersRepository.findOne({ where: { email } });
   }
@@ -88,12 +100,12 @@ export class UsersService {
   async login(email: string, password: string): Promise<{ accessToken: string }> {
     const user = await this.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email not found.');
     }
 
     const isPasswordValid = await this.validatePassword(user, password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Password not matched');
+      throw new UnauthorizedException('Password not matched.');
     }
 
     const payload = { username: user.username, sub: user.id };

@@ -4,22 +4,14 @@ import { ChatGateway } from './chat.gateway';
 import { ChatController } from './chat.controller';
 import { Message } from './entities/message.entity';
 import { UsersModule } from '../users/users.module';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ChatService } from './chat.service';
+import { AuthSharedModule } from 'src/auth/auth-shared.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Message]),
     UsersModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
-      }),
-    }),
+    AuthSharedModule
   ],
   providers: [ChatGateway, ChatService],
   controllers: [ChatController],

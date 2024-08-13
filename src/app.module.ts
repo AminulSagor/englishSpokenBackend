@@ -1,42 +1,42 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
-import { User } from './users/user.entity';
-import { OtpModule } from './otp/otp.module';
-import { UserNotConfirmed } from './users/user-not-confirmed.entity';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UsersModule } from './users/users.module';
+import { OtpModule } from './otp/otp.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
-import { TokenBlacklist } from './auth/TokenBlacklist.entity';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
-import { UserDetails } from './users/user-details.entity';
 import { ChatModule } from './chat/chat.module';
-import { Message } from './chat/entities/message.entity';
+import { HomeModule } from './home/home.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'root',
-      database: 'englishSpoken',
-      entities: [User, UserNotConfirmed, TokenBlacklist, UserDetails, Message],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        synchronize: true,
+        autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      }),
+      inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),
     UsersModule,
     OtpModule,
+    HomeModule,
     ChatModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>("SaGor"),
         signOptions: { expiresIn: '10h' },
       }),
     }),

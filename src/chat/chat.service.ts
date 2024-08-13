@@ -26,7 +26,10 @@ export class ChatService {
   }
 
   async getMessagesForRoom(room: string): Promise<Message[]> {
-    return this.messageRepository.find({ where: { room }, order: { createdAt: 'ASC' } });
+    return this.messageRepository.find({
+      where: { room },
+      order: { createdAt: 'ASC' },
+    });
   }
 
   async getLastMessageForRoom(room: string): Promise<Message> {
@@ -46,12 +49,10 @@ export class ChatService {
       .addOrderBy('message.createdAt', 'DESC')
       .getRawMany();
 
-    const conversations = messages.map((message) => ({
+    return messages.map((message) => ({
       receiverId: message.senderId === userId ? message.receiverId : message.senderId,
       lastMessage: message,
     }));
-
-    return conversations;
   }
 
   async deleteMessage(senderId: number, messageId: number): Promise<void> {
@@ -66,4 +67,3 @@ export class ChatService {
     await this.messageRepository.delete({ room });
   }
 }
-

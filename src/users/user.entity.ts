@@ -17,6 +17,12 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ default: false })
+  active: boolean; 
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastActiveAt: Date;
+
   @OneToOne(() => UserDetails, (userDetails) => userDetails.user, { cascade: true })
   userDetails: UserDetails;
 
