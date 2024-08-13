@@ -18,8 +18,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   logger.log(`Starting server on port ${port}`);
   await app.listen(port);
-  logger.log(`Server started on port ${port}`);
-  logger.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`WebSocket server running on port ${port}`)
 }
 
 bootstrap();

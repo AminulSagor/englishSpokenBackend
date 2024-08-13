@@ -30,7 +30,11 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {
-    console.log('WebSocket server initialized');
+    try {
+      console.log('WebSocket server initialized');
+    } catch (error) {
+      this.logger.error('Error during WebSocket server initialization', error.stack);
+    }
   }
 
   async handleConnection(client: Socket) {
