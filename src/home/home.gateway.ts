@@ -71,6 +71,7 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     } catch (error) {
       console.error('Error handling disconnection:', error.message);
+    
     }
   }
 
