@@ -33,7 +33,7 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
-    
+    console.log("akhane duke");
     // Log connection details
     this.logger.debug(`Client connection details: ${JSON.stringify(client.handshake)}`);
 
