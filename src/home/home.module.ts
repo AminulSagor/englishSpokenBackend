@@ -1,15 +1,12 @@
+// src/home/home.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HomeController } from './home.controller';
 import { HomeService } from './home.service';
-import { UserDetails } from 'src/users/user-details.entity';
-import { User } from 'src/users/user.entity';
 import { HomeGateway } from './home.gateway';
-
+import { User } from 'src/users/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserDetails])],
-  controllers: [HomeController],
+  imports: [TypeOrmModule.forFeature([User])],
   providers: [HomeService, HomeGateway],
 })
 export class HomeModule {}

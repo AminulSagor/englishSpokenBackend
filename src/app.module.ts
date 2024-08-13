@@ -6,8 +6,8 @@ import { OtpModule } from './otp/otp.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
 import { BlacklistMiddleware } from './auth/blacklist.middleware';
-import { HomeModule } from './home/home.module';
 import { ChatModule } from './chat/chat.module';
+import { HomeModule } from './home/home.module';
 
 @Module({
   imports: [

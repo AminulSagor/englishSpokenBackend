@@ -20,6 +20,9 @@ export class User {
   @Column({ default: false })
   active: boolean; 
 
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastActiveAt: Date;
+
   @OneToOne(() => UserDetails, (userDetails) => userDetails.user, { cascade: true })
   userDetails: UserDetails;
 
