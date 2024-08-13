@@ -11,10 +11,13 @@ export class ChatService {
     private messageRepository: Repository<Message>,
   ) {}
 
+  // Create a message in the specified room
   async createMessage(senderId: number, createMessageDto: CreateMessageDto): Promise<Message> {
     const { receiverId, content } = createMessageDto;
+    // Generate a consistent room ID by sorting senderId and receiverId
     const room = [senderId, receiverId].sort().join('-');
 
+    // Create and save the message in the database
     const message = this.messageRepository.create({
       senderId,
       receiverId,
@@ -25,10 +28,15 @@ export class ChatService {
     return this.messageRepository.save(message);
   }
 
+  // Retrieve all messages for a specific room, ordered by creation time
   async getMessagesForRoom(room: string): Promise<Message[]> {
-    return this.messageRepository.find({ where: { room }, order: { createdAt: 'ASC' } });
+    return this.messageRepository.find({
+      where: { room },
+      order: { createdAt: 'ASC' },
+    });
   }
 
+  // Get the most recent message for a specific room
   async getLastMessageForRoom(room: string): Promise<Message> {
     return this.messageRepository.findOne({
       where: { room },
@@ -36,6 +44,7 @@ export class ChatService {
     });
   }
 
+  // Retrieve the latest conversation for a specific user, grouped by room
   async getConversationsForUser(userId: number): Promise<{ receiverId: number; lastMessage: Message }[]> {
     const messages = await this.messageRepository
       .createQueryBuilder('message')
@@ -46,14 +55,13 @@ export class ChatService {
       .addOrderBy('message.createdAt', 'DESC')
       .getRawMany();
 
-    const conversations = messages.map((message) => ({
+    return messages.map((message) => ({
       receiverId: message.senderId === userId ? message.receiverId : message.senderId,
       lastMessage: message,
     }));
-
-    return conversations;
   }
 
+  // Delete a specific message sent by a specific user
   async deleteMessage(senderId: number, messageId: number): Promise<void> {
     const result = await this.messageRepository.delete({ id: messageId, senderId });
     if (result.affected === 0) {
@@ -61,9 +69,9 @@ export class ChatService {
     }
   }
 
+  // Delete all messages in a conversation between two users
   async deleteConversation(senderId: number, receiverId: number): Promise<void> {
     const room = [senderId, receiverId].sort().join('-');
     await this.messageRepository.delete({ room });
   }
 }
-

@@ -13,7 +13,6 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { BadRequestException, Logger } from '@nestjs/common';
 
-
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -27,6 +26,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   async handleConnection(client: Socket) {
+    this.logger.log(`Client attempting connection...`);
     const token = client.handshake.headers.authorization?.split(' ')[1];
     if (!token) {
       this.logger.warn('No token provided, disconnecting client');
@@ -34,15 +34,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     try {
       const decoded = this.jwtService.verify(token);
+      this.logger.log(`Token decoded successfully: ${JSON.stringify(decoded)}`);
       const user = await this.usersService.findById(decoded.sub);
       if (!user) {
-        this.logger.warn('User not found, disconnecting client');
+        this.logger.warn(`User not found for ID ${decoded.sub}, disconnecting client`);
         return client.disconnect();
       }
       client.data.user = user;
-      this.logger.log(`Client connected: ${user.id}`);
+      this.logger.log(`Client connected successfully: ${user.id}`);
     } catch (error) {
-      this.logger.error('Token verification failed, disconnecting client:', error.message);
+      this.logger.error(`Token verification failed, disconnecting client: ${error.message}`);
       return client.disconnect();
     }
   }
@@ -56,8 +57,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() rawData: any,
   ) {
-
-    // Ensure rawData is an object and parse content and receiverId
+    this.logger.log(`Received sendMessage event: ${JSON.stringify(rawData)}`);
     const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
     const { content, receiverId } = data;
 
@@ -68,13 +68,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const senderId = client.data.user.id;
+    this.logger.log(`Creating message from user ${senderId} to user ${receiverId}`);
 
     try {
       const message = await this.chatService.createMessage(senderId, { content, receiverId });
-      this.logger.log('Message created:', message);
+      this.logger.log(`Message created successfully: ${JSON.stringify(message)}`);
       this.server.to(receiverId.toString()).emit('receiveMessage', message);
+      this.logger.log(`Message sent to receiverId ${receiverId}`);
     } catch (error) {
-      this.logger.error('Failed to create message:', error.message);
+      this.logger.error(`Failed to create message: ${error.message}`);
       client.emit('error', { message: 'Failed to create message' });
       throw new BadRequestException('Failed to create message');
     }
@@ -82,26 +84,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
+    this.logger.log(`Client ${client.data.user?.id} joining room: ${room}`);
     client.join(room);
     client.emit('joinedRoom', room);
-    this.logger.log(`Client ${client.data.user?.id} joined room ${room}`);
+    this.logger.log(`Client ${client.data.user?.id} joined room ${room} successfully`);
 
-    // Fetch past messages for the room
     try {
+      this.logger.log(`Fetching past messages for room ${room}`);
       const pastMessages = await this.chatService.getMessagesForRoom(room);
+      this.logger.log(`Fetched past messages for room ${room}: ${JSON.stringify(pastMessages)}`);
 
-      // Emit the past messages to the client
       client.emit('receiveMessage', pastMessages);
+      this.logger.log(`Past messages emitted to client ${client.data.user?.id}`);
     } catch (error) {
-      this.logger.error('Failed to fetch past messages:', error.message);
+      this.logger.error(`Failed to fetch past messages for room ${room}: ${error.message}`);
       client.emit('error', { message: 'Failed to fetch past messages' });
     }
   }
 
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
+    this.logger.log(`Client ${client.data.user?.id} leaving room: ${room}`);
     client.leave(room);
     client.emit('leftRoom', room);
-    this.logger.log(`Client ${client.data.user?.id} left room ${room}`);
+    this.logger.log(`Client ${client.data.user?.id} left room ${room} successfully`);
   }
 }
