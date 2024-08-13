@@ -37,10 +37,10 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Log connection details
     this.logger.debug(`Client connection details: ${JSON.stringify(client.handshake)}`);
 
-    setTimeout(() => {
-      this.logger.warn(`Disconnecting client due to timeout: ${client.id}`);
-      client.disconnect();
-    }, 30000);
+    // setTimeout(() => {
+    //   this.logger.warn(`Disconnecting client due to timeout: ${client.id}`);
+    //   client.disconnect();
+    // }, 30000);
   }
 
   async handleDisconnect(client: Socket) {
