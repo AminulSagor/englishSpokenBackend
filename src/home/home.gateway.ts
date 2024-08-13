@@ -11,7 +11,7 @@ import { FilterDto } from './dto/filter.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
-import { Logger } from '@nestjs/common';
+import { Logger, BadRequestException } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -34,7 +34,6 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
 
-    // Set a timeout to disconnect the client after 30 seconds
     setTimeout(() => {
       client.disconnect();
     }, 30000);
@@ -62,7 +61,8 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!userData || !userData.id) {
         this.logger.warn('Invalid userData received', userData);
-        return;
+        client.emit('error', { message: 'Validation failed: userData and userData.id are required' });
+        throw new BadRequestException('Validation failed: userData and userData.id are required');
       }
 
       this.activeUsers.set(client.id, { id: userData.id });
@@ -70,27 +70,30 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.broadcastActiveUsers();
     } catch (error) {
       this.logger.error('Error updating user status on setActiveUser', error.stack);
+      client.emit('error', { message: 'Failed to update user status' });
+      throw new BadRequestException('Failed to update user status');
     }
   }
 
   @SubscribeMessage('getActiveUsers')
-handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
-  try {
-    this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
+  handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
+    try {
+      this.logger.log(`Received getActiveUsers request from client: ${client.id}`);
 
-    // Ensure filterDto is not null or undefined
-    if (!filterDto) {
-      this.logger.warn('filterDto is null or undefined');
-      filterDto = {}; // or provide default values as needed
+      if (!filterDto) {
+        this.logger.warn('filterDto is null or undefined');
+        filterDto = {}; // or provide default values as needed
+      }
+
+      const activeUsersArray = Array.from(this.activeUsers.values());
+      const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
+      client.emit('activeUsers', filteredUsers);
+    } catch (error) {
+      this.logger.error('Error fetching active users', error.stack);
+      client.emit('error', { message: 'Failed to fetch active users' });
+      throw new BadRequestException('Failed to fetch active users');
     }
-
-    const activeUsersArray = Array.from(this.activeUsers.values());
-    const filteredUsers = this.homeService.filterUsers(activeUsersArray, filterDto);
-    client.emit('activeUsers', filteredUsers);
-  } catch (error) {
-    this.logger.error('Error fetching active users', error.stack);
   }
-}
 
   broadcastActiveUsers() {
     this.logger.log('Broadcasting active users to all clients');
@@ -98,7 +101,6 @@ handleGetActiveUsers(client: Socket, filterDto: FilterDto) {
     this.server.emit('activeUsers', activeUsersArray);
   }
 
-  // Utility function to parse data if it is a string
   private parseData(data: any) {
     if (typeof data === 'string') {
       try {
