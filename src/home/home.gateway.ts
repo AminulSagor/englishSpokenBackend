@@ -44,7 +44,9 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
+    console.log("disconnetion happend");
     this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.debug(`Client ${client.id} disconnected at ${new Date().toISOString()}`);
     
     const userData = this.activeUsers.get(client.id);
     if (userData) {
