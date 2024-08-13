@@ -29,7 +29,9 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly homeService: HomeService,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {}
+  ) {
+    console.log('WebSocket server initialized');
+  }
 
   async handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
