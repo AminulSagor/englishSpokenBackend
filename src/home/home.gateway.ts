@@ -17,17 +17,25 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(@ConnectedSocket() client: Socket) {
     try {
       console.log('Client connected:', client.id);
-
-      const token = client.handshake.query.token as string;
-      if (!token) {
-        console.error('Token is missing. Disconnecting client:', client.id);
+  
+      // Retrieve the token from the Authorization header
+      const authHeader = client.handshake.headers.authorization;
+      if (!authHeader) {
+        console.error('Authorization header is missing. Disconnecting client:', client.id);
         client.disconnect();
         return;
       }
-
+  
+      const token = authHeader.split(' ')[1]; // Extract the token after 'Bearer'
+      if (!token) {
+        console.error('Token is missing in the Authorization header. Disconnecting client:', client.id);
+        client.disconnect();
+        return;
+      }
+  
       const decoded = this.jwtService.verify(token);
       console.log('Token verified successfully for user:', decoded.userId);
-
+  
       // Mark the user as active using the decoded userId
       await this.homeService.setUserActive(decoded.userId);
       console.log(`User ${decoded.userId} marked as active`);
@@ -36,6 +44,7 @@ export class HomeGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.disconnect();
     }
   }
+  
 
   async handleDisconnect(@ConnectedSocket() client: Socket) {
     try {
